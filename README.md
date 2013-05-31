@@ -7,6 +7,7 @@ Who needs a PM when you have a robot?
 
 -----------------------------------------------
 `export HUBOT_GITHUB_TOKEN="yourtoken"`
+
 `export HUBOT_GITHUB_REPO="user/reponame"`
 
 You need to edit the script file and add your users to the USERS constant in the format
