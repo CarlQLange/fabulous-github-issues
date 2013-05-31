@@ -1,0 +1,23 @@
+{
+  "name": "fabulous-github-issues",
+  "version": "0.0.1",
+  "description": "Github issues for Hubot that are F-A-B!",
+  "main": "index.js",
+  "dependencies": {
+    "githubot": "*"
+  }
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/carlqlange/fabulous-github-issues"
+  },
+  "keywords": [
+    "hubot",
+    "github",
+    "issues"
+  ],
+  "author": "Carl Lange",
+  "license": "BSD"
+}
