@@ -15,7 +15,7 @@
 #	hubot tag (issue) #42 with <comma-seperated tag list>
 #	hubot close (issue) #42
 #	hubot show (me) my issues
-#	hubot show (me) <user>'s issues - NOT YET
+#	hubot show (me) <user>'s issues
 #	hubot show (me) issues
 #	hubot show (me) issues with <comma-seperated tag list> - NOT YET
 #	hubot add comment (to (issue)) #42: <comment>
@@ -32,48 +32,57 @@
 http = require 'https'
 github = require 'githubot'
 
-#Your repo
 REPO = process.env["HUBOT_GITHUB_REPO"]
 #Hipchat User Name -> Github Username
 USERS = {
 	"Carl Lange": "CarlQLange"
 }
 
-issues = {}
+Issues = {}
 
-issues.new = (msg, title, description, user) ->
+Issues.new = (msg, title, description, user) ->
 	github.post "repos/#{REPO}/issues",
 		{title: title, body: description},
 		(res) ->
 			msg.send "Created issue ##{res.number}."
 
-issues.assign = (msg, number, user) ->
+Issues.assign = (msg, number, user) ->
 	github.post "repos/#{REPO}/issues/#{number}",
 		{assignee: user},
 		(res) ->
 			msg.send "Assigned issue ##{number} to #{user}."
 
-issues.tag = (msg, number, tagList) ->
+Issues.tag = (msg, number, tagList) ->
 	github.post "repos/#{REPO}/issues/#{number}",
 		{labels: tagList},
 		(res) ->
 			msg.send "Replaced the tags on ##{number}."
 
-issues.close = (msg, number) ->
+Issues.close = (msg, number) ->
 	github.post "repos/#{REPO}/issues/#{number}",
 		{state: 'closed'},
 		->
 			msg.send "Closed ##{number}."
 
-issues.get = (msg, user) ->
+Issues.get = (msg, user) ->
 	github.get "repos/#{REPO}/issues", (issues) ->
-		str = ""
-		for issue in issues
-			#TODO better formatting
-			str += "##{issue.number}: Title: #{issue.title}, Description: #{issue.body}, Reporter: #{issue.user.login}, Tags: #{(label.name for label in issue.labels).toString()}\n"
-		msg.send str
+		if user
+			issues = issues.filter (el) ->
+				el.assignee? and el.assignee.login is user
 
-issues.comment = (msg, number, comment) ->
+		msg.send Issues.formatIssues(issues)
+
+Issues.formatIssues = (issues) ->
+	str = ""
+	for issue in issues
+		str += Issues.formatIssue issue
+	str
+
+Issues.formatIssue = (issue) ->
+	"##{issue.number}: Title: #{issue.title}, Description: #{issue.body}, Reporter: #{issue.user.login}, Tags: #{(label.name for label in issue.labels).toString()}\n"
+ 
+
+Issues.comment = (msg, number, comment) ->
 	github.post "repos/#{REPO}/issues/#{number}/comments",
 		{body: comment},
 		->
@@ -88,33 +97,35 @@ module.exports = (robot) ->
 		description = msg.match[5]
 		user = msg.message.user.name #TODO user matching
 
-		issues.new(msg, title, description, user)
+		Issues.new(msg, title, description, user)
 
 	robot.respond /assign(\s+issue)?\s+#(\d+)\sto\s(.*)/i, (msg) ->
 		number = msg.match[2]
 		user = msg.match[3]
 
-		issues.assign(msg, number, user)
+		Issues.assign(msg, number, user)
 
 	robot.respond /tag\s+#(\d+)\swith\s(.*)/i, (msg) ->
 		number = msg.match[1]
 		tagList = msg.match[2].split(/,\s*/)
 
-		issues.tag(msg, number, tagList)
+		Issues.tag(msg, number, tagList)
 
 	robot.respond /close\s+#(\d+)/i, (msg) ->
 		number = msg.match[1]
 		
-		issues.close(msg, number)
+		Issues.close(msg, number)
 
-	robot.respond /show\s+(me)?\s+(\S+)?\s*issues/i, (msg) ->
+	robot.respond /show(\s+me)?(\s?\w+)?('s)?\s*issues/i, (msg) ->
 		if msg.match[2]
-			if msg.match[2] is 'my'
+			if msg.match[2].trim() is 'my'
 				user = USERS[msg.message.user.name]
 			else
-				user = msg.match[2] #TODO better user matching
+				for name of USERS
+					if name.match(/(\w*)\s/)[1].trim().toLowerCase() is msg.match[2].trim().toLowerCase()
+						user = USERS[name]
 
-		issues.get(msg, user)
+		Issues.get(msg, user)
 
 	robot.respond /(add(\s+a)?)?\s+comment\s+(to|on)?\s+#(\d*):\s*(.*)/i, (msg) -> #TODO better regex
 		number = msg.match[4]
@@ -122,6 +133,5 @@ module.exports = (robot) ->
 
 		comment += "\n\nComment by #{msg.message.user.name} (#{USERS[msg.message.user.name]}) via Fabulous-Github-Issues for Hubot."
 
-		issues.comment(msg, number, comment)
-
+		Issues.comment(msg, number, comment)
 
