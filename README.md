@@ -19,7 +19,7 @@ Commands:
 * `hubot tag (issue) #42 with <comma-seperated tag list>`
 * `hubot close (issue) #42`
 * `hubot show (me) my issues`
-* `hubot show (me) <user>'s issues - NOT YET`
+* `hubot show (me) <user>'s issues`
 * `hubot show (me) issues`
 * `hubot show (me) issues with <comma-seperated tag list> - NOT YET`
 * `hubot add comment (to (issue)) #42: <comment>`
