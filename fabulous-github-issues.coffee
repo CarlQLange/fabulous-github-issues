@@ -64,6 +64,12 @@ Issues.close = (msg, number) ->
 		->
 			msg.send "Closed ##{number}."
 
+Issues.reopen = (msg, number) ->
+	github.post "repos/#{REPO}/issues/#{number}",
+		{state: 'open'},
+		->
+			msg.send "Reopened ##{number}."
+
 Issues.get = (msg, user) ->
 	github.get "repos/#{REPO}/issues", (issues) ->
 		if user
@@ -79,14 +85,14 @@ Issues.formatIssues = (issues) ->
 	str
 
 Issues.formatIssue = (issue) ->
-	"##{issue.number}: Title: #{issue.title}, Description: #{issue.body}, Reporter: #{issue.user.login}, Tags: #{(label.name for label in issue.labels).toString()}\n"
+	"##{issue.number}: Title: #{issue.title}, Description: #{issue.body}\n"
  
 
 Issues.comment = (msg, number, comment) ->
 	github.post "repos/#{REPO}/issues/#{number}/comments",
 		{body: comment},
 		->
-			msg.send "Commented on ##{number}."
+			#msg.send "Commented on ##{number}."
 
 
 module.exports = (robot) ->
@@ -95,7 +101,7 @@ module.exports = (robot) ->
 	robot.respond /(new)?\s*issue\s*(me)?(:)?\s*([^\.]*[^\s]*)(.*)/i, (msg) ->
 		title = msg.match[4]
 		description = msg.match[5]
-		user = msg.message.user.name #TODO user matching
+		user = msg.message.user.name
 
 		Issues.new(msg, title, description, user)
 
@@ -116,6 +122,11 @@ module.exports = (robot) ->
 		
 		Issues.close(msg, number)
 
+	robot.respond /reopen\s+#(\d+)/i, (msg) ->
+		number = msg.match[1]
+
+		Issues.reopen(msg, number)
+
 	robot.respond /show(\s+me)?(\s?\w+)?('s)?\s*issues/i, (msg) ->
 		if msg.match[2]
 			if msg.match[2].trim() is 'my'
@@ -130,6 +141,14 @@ module.exports = (robot) ->
 	robot.respond /(add(\s+a)?)?\s+comment\s+(to|on)?\s+#(\d*):\s*(.*)/i, (msg) -> #TODO better regex
 		number = msg.match[4]
 		comment = msg.match[5]
+
+		comment += "\n\nComment by #{msg.message.user.name} (#{USERS[msg.message.user.name]}) via Fabulous-Github-Issues for Hubot."
+
+		Issues.comment(msg, number, comment)
+
+	robot.respond /c(\s+)?#(\d+)\s+(.*)/, (msg) ->
+		number =  msg.match[2]
+		comment = msg.match[3]
 
 		comment += "\n\nComment by #{msg.message.user.name} (#{USERS[msg.message.user.name]}) via Fabulous-Github-Issues for Hubot."
 
