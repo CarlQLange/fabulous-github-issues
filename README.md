@@ -22,4 +22,5 @@ Commands:
 * `hubot show (me) <user>'s issues`
 * `hubot show (me) issues`
 * `hubot show (me) issues with <comma-seperated tag list> - NOT YET`
+* `hubot show (me) issue #42`
 * `hubot add comment (to (issue)) #42: <comment>`
