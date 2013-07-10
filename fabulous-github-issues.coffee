@@ -18,6 +18,7 @@
 #	hubot show (me) <user>'s issues
 #	hubot show (me) issues
 #	hubot show (me) issues with <comma-seperated tag list> - NOT YET
+#	hubot show (me) issue #42
 #	hubot add comment (to (issue)) #42: <comment>
 #
 # Notes:
@@ -32,6 +33,7 @@
 http = require 'https'
 github = require 'githubot'
 
+#Your repo
 REPO = process.env["HUBOT_GITHUB_REPO"]
 #Hipchat User Name -> Github Username
 USERS = {
@@ -53,10 +55,13 @@ Issues.assign = (msg, number, user) ->
 			msg.send "Assigned issue ##{number} to #{user}."
 
 Issues.tag = (msg, number, tagList) ->
-	github.post "repos/#{REPO}/issues/#{number}",
-		{labels: tagList},
-		(res) ->
-			msg.send "Replaced the tags on ##{number}."
+	github.get "repos/#{REPO}/issues/#{number}", (issue) ->
+		tagList = tagList.concat(label.name for label in issue.labels)
+
+		github.post "repos/#{REPO}/issues/#{number}",
+			{labels: tagList},
+			(res) ->
+				msg.send "Added tags to ##{number}."
 
 Issues.close = (msg, number) ->
 	github.post "repos/#{REPO}/issues/#{number}",
@@ -70,23 +75,29 @@ Issues.reopen = (msg, number) ->
 		->
 			msg.send "Reopened ##{number}."
 
-Issues.get = (msg, user) ->
-	github.get "repos/#{REPO}/issues", (issues) ->
-		if user
-			issues = issues.filter (el) ->
-				el.assignee? and el.assignee.login is user
+Issues.get = (msg, user, number) ->
+	if number
+		github.get "repos/#{REPO}/issues/#{number}", (issue) ->
+			msg.send Issues.formatIssueLong(issue)
+	else
+		github.get "repos/#{REPO}/issues", (issues) ->
+			if user
+				issues = issues.filter (el) ->
+					el.assignee? and el.assignee.login is user
 
-		msg.send Issues.formatIssues(issues)
+			msg.send Issues.formatIssues(issues)
 
 Issues.formatIssues = (issues) ->
 	str = ""
 	for issue in issues
-		str += Issues.formatIssue issue
+		str += Issues.formatIssueShort issue, false
 	str
 
-Issues.formatIssue = (issue) ->
-	"##{issue.number}: Title: #{issue.title}, Description: #{issue.body}\n"
- 
+Issues.formatIssueLong = (issue) ->
+		"##{issue.number}: #{issue.title}\n\nTags: #{(label.name for label in issue.labels)}\n\n#{issue.body}"
+
+Issues.formatIssueShort = (issue) ->
+		"##{issue.number}: Title: #{issue.title}, Description: #{issue.body}\n"
 
 Issues.comment = (msg, number, comment) ->
 	github.post "repos/#{REPO}/issues/#{number}/comments",
@@ -137,6 +148,11 @@ module.exports = (robot) ->
 						user = USERS[name]
 
 		Issues.get(msg, user)
+
+	robot.respond /show(\s+me)?(\s+issue)?\s+#(\d*)/i, (msg) ->
+		number = msg.match[3]
+
+		Issues.get(msg, null, number)
 
 	robot.respond /(add(\s+a)?)?\s+comment\s+(to|on)?\s+#(\d*):\s*(.*)/i, (msg) -> #TODO better regex
 		number = msg.match[4]
