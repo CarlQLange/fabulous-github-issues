@@ -114,6 +114,8 @@ module.exports = (robot) ->
 		description = msg.match[5]
 		user = msg.message.user.name
 
+		description += "\n\nOpened by #{msg.message.user.name} (@#{USERS[msg.message.user.name]}) via Fabulous-Github-Issues for Hubot."
+
 		Issues.new(msg, title, description, user)
 
 	robot.respond /assign(\s+issue)?\s+#(\d+)\sto\s(.*)/i, (msg) ->
@@ -158,7 +160,7 @@ module.exports = (robot) ->
 		number = msg.match[4]
 		comment = msg.match[5]
 
-		comment += "\n\nComment by #{msg.message.user.name} (#{USERS[msg.message.user.name]}) via Fabulous-Github-Issues for Hubot."
+		comment += "\n\nComment by #{msg.message.user.name} (@#{USERS[msg.message.user.name]}) via Fabulous-Github-Issues for Hubot."
 
 		Issues.comment(msg, number, comment)
 
@@ -166,7 +168,7 @@ module.exports = (robot) ->
 		number =  msg.match[2]
 		comment = msg.match[3]
 
-		comment += "\n\nComment by #{msg.message.user.name} (#{USERS[msg.message.user.name]}) via Fabulous-Github-Issues for Hubot."
+		comment += "\n\nComment by #{msg.message.user.name} (@#{USERS[msg.message.user.name]}) via Fabulous-Github-Issues for Hubot."
 
 		Issues.comment(msg, number, comment)
 
