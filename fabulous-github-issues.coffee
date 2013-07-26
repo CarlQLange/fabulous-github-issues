@@ -105,7 +105,6 @@ Issues.comment = (msg, number, comment) ->
 		->
 			#msg.send "Commented on ##{number}."
 
-
 module.exports = (robot) ->
 	github = github robot
 
@@ -120,7 +119,7 @@ module.exports = (robot) ->
 
 	robot.respond /assign(\s+issue)?\s+#(\d+)\sto\s(.*)/i, (msg) ->
 		number = msg.match[2]
-		user = msg.match[3]
+		user = getGithubName msg.match[3]
 
 		Issues.assign(msg, number, user)
 
@@ -142,12 +141,7 @@ module.exports = (robot) ->
 
 	robot.respond /show(\s+me)?(\s?\w+)?('s)?\s*issues/i, (msg) ->
 		if msg.match[2]
-			if msg.match[2].trim() is 'my'
-				user = USERS[msg.message.user.name]
-			else
-				for name of USERS
-					if name.match(/(\w*)\s/)[1].trim().toLowerCase() is msg.match[2].trim().toLowerCase()
-						user = USERS[name]
+			user = getGithubName msg.match[2]
 
 		Issues.get(msg, user)
 
@@ -172,3 +166,13 @@ module.exports = (robot) ->
 
 		Issues.comment(msg, number, comment)
 
+
+getGithubName = (shortName, msg) ->
+	shortName = shortName.trim()
+	if shortName is 'me' or shortName is 'my'
+		name = msg.message.user.name
+	else
+		for user of USERS
+			if user.match(/(\w*)\s/)[1].trim().toLowerCase() is shortName.trim().toLowerCase()
+				name = user
+	USERS[name]
