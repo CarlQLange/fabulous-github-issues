@@ -17,7 +17,7 @@
 #	hubot show (me) my issues
 #	hubot show (me) <user>'s issues
 #	hubot show (me) issues
-#	hubot show (me) issues with <comma-seperated tag list> - NOT YET
+#	hubot show (me) issues with <comma-seperated tag list>
 #	hubot show (me) issue #42
 #	hubot add comment (to (issue)) #42: <comment>
 #
@@ -158,6 +158,11 @@ module.exports = (robot) ->
 		number = msg.match[3]
 
 		Issues.get(msg, null, number)
+
+	robot.respond /show(\s+me)?issues\s+with\s+(.*)/i, (msg) ->
+		tagList = msg.match[2].split(/,\s*/)
+
+		Issues.get(msg, null, null, tagList)
 
 	robot.respond /(add(\s+a)?)?\s+comment\s+(to|on)?\s+#(\d*):\s*(.*)/i, (msg) -> #TODO better regex
 		number = msg.match[4]
