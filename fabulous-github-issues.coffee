@@ -96,17 +96,38 @@ Issues.get = (msg, user, number, tagList) ->
 
 			msg.send Issues.formatIssues(issues)
 
+Issues.getMilestone = (msg, number) ->
+	if number
+		github.get "repos/#{REPO}/milestones/#{number}", (milestone) ->
+			msg.send Issues.formatMilestoneLong(milestone)
+	else
+		github.get "repos/#{REPO}/milestones", (milestones) ->
+			msg.send Issues.formatMilestones(milestones)
+
 Issues.formatIssues = (issues) ->
 	str = ""
 	for issue in issues
-		str += Issues.formatIssueShort issue, false
+		str += Issues.formatIssueShort issue
 	str
 
 Issues.formatIssueLong = (issue) ->
-		"##{issue.number}: #{issue.title}\n\nTags: #{(label.name for label in issue.labels)}\n\n#{issue.body}"
+	"##{issue.number}: #{issue.title}\n\nTags: #{(label.name for label in issue.labels)}\n\n#{issue.body}"
 
 Issues.formatIssueShort = (issue) ->
-		"##{issue.number}: Title: #{issue.title}, Description: #{issue.body}\n"
+	"##{issue.number}: #{issue.title}, Description: #{issue.body}\n"
+
+Issues.formatMilestones = (milestones) ->
+	str = ""
+	for milestone in milestones
+		str += Issues.formatMilestoneShort, milestone
+	str
+
+Issues.formatMilestoneShort = (ms) ->
+	"##{ms.number}: #{ms.title} -- #{~~(ms.open_issues / (ms.open_issues + ms.closed_issues) * 100)}%\n"
+
+Issues.formatMilestoneLong = (ms) ->
+	#this should show open issues left
+	"#{Issues.formatMilestoneShort(ms)}\t#{ms.description}"
 
 Issues.comment = (msg, number, comment) ->
 	github.post "repos/#{REPO}/issues/#{number}/comments",
@@ -163,6 +184,14 @@ module.exports = (robot) ->
 		tagList = msg.match[2].split(/,\s*/)
 
 		Issues.get(msg, null, null, tagList)
+
+	robot.respond /show(\s+me)?milestones/i, (msg) ->
+		Issues.getMilestone(msg)
+	
+	robot.respond /show(\s+me)?milestone\s+#(\d+)/, (msg) ->
+		number = msg.match[2]
+
+		Issues.getMilestone(msg, number)
 
 	robot.respond /(add(\s+a)?)?\s+comment\s+(to|on)?\s+#(\d*):\s*(.*)/i, (msg) -> #TODO better regex
 		number = msg.match[4]
