@@ -40,6 +40,9 @@ USERS = {
 	"Carl Lange": "CarlQLange"
 }
 
+Array::isSubsetOf = (other) -> #probably not accurate terminology but fuck you mathematics
+	@.filter((el) -> el in other).length is @.length
+
 Issues = {}
 
 Issues.new = (msg, title, description, user) ->
@@ -75,7 +78,7 @@ Issues.reopen = (msg, number) ->
 		->
 			msg.send "Reopened ##{number}."
 
-Issues.get = (msg, user, number) ->
+Issues.get = (msg, user, number, tagList) ->
 	if number
 		github.get "repos/#{REPO}/issues/#{number}", (issue) ->
 			msg.send Issues.formatIssueLong(issue)
@@ -84,6 +87,12 @@ Issues.get = (msg, user, number) ->
 			if user
 				issues = issues.filter (el) ->
 					el.assignee? and el.assignee.login is user
+
+			if tagList
+				issues = issues.filter (el) ->
+					issuetags = (tag.name for tag in el.labels)
+					issuetags.isSubsetOf(tagList)
+					
 
 			msg.send Issues.formatIssues(issues)
 
