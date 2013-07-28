@@ -25,7 +25,7 @@
 #	export HUBOT_GITHUB_TOKEN="yourtoken"
 #	export HUBOT_GITHUB_REPO="user/reponame"
 #	You need to edit the script file and add your users to the USERS constant in the format
-#		Hipchat Name: GithubUsername
+#		Chat Name: GithubUsername
 #
 # Author:
 #	Carl Lange (@csl_)
@@ -90,8 +90,7 @@ Issues.get = (msg, user, number, tagList) ->
 
 			if tagList
 				issues = issues.filter (el) ->
-					issuetags = (tag.name for tag in el.labels)
-					issuetags.isSubsetOf(tagList)
+					(tag.name for tag in el.labels).isSubsetOf(tagList)
 					
 
 			msg.send Issues.formatIssues(issues)
