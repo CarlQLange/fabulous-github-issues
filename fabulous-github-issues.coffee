@@ -96,6 +96,18 @@ Issues.get = (msg, user, number, tagList) ->
 
 			msg.send Issues.formatIssues(issues)
 
+Issues.addToMilestone = (msg, issue, milestone) ->
+	github.post "repos/#{REPO}/issues/#{number}",
+		{milestone: milestone},
+		->
+			msg.send "Added ##{issue} to milestone #{milestone}"
+
+Issues.removeFromMilestone = (msg, issue) ->
+	github.post "repos/#{REPO}/issues/#{number}",
+		{milestone: null}, #guessing here because I don't have access to API docs
+		->
+			msg.send "Removed ##{issue} from its milestone"
+
 Issues.getMilestone = (msg, number) ->
 	if number
 		github.get "repos/#{REPO}/milestones/#{number}", (milestone) ->
@@ -158,6 +170,18 @@ module.exports = (robot) ->
 		tagList = msg.match[2].split(/,\s*/)
 
 		Issues.tag(msg, number, tagList)
+
+	robot.respond /add\s+#(\d+)\s+to\s+(milestone\s+)?(\d+)/, (msg) ->
+		issue = msg.match[1]
+		milestone = msg.match[3]
+
+		Issues.addToMilestone(msg, issue, milestone)
+
+	robot.respond /remove\s+#(\d+)\s+from\s+(milestone\s+)?(\d+)/, (msg) ->
+		issue = msg.match[1]
+		milestone = msg.match[3] #we don't actually need this
+
+		Issues.removeFromMilestone(msg, issue)
 
 	robot.respond /close\s+#(\d+)/i, (msg) ->
 		number = msg.match[1]
