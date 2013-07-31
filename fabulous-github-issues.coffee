@@ -19,6 +19,10 @@
 #	hubot show (me) issues
 #	hubot show (me) issues with <comma-seperated tag list>
 #	hubot show (me) issue #42
+#	hubot show (me) milestones
+#	hubot show (me) milestone 4
+#	hubot add #42 to milestone 3
+#	hubot remove #42 from milestone 3
 #	hubot add comment (to (issue)) #42: <comment>
 #
 # Notes:
@@ -39,6 +43,7 @@ REPO = process.env["HUBOT_GITHUB_REPO"]
 USERS = {
 	"Carl Lange": "CarlQLange"
 }
+
 
 Array::isSubsetOf = (other) -> #probably not accurate terminology but fuck you mathematics
 	@.filter((el) -> el in other).length is @.length
@@ -96,7 +101,7 @@ Issues.get = (msg, user, number, tagList) ->
 			msg.send Issues.formatIssues(issues)
 
 Issues.addToMilestone = (msg, issue, milestone) ->
-	github.post "repos/#{REPO}/issues/#{number}",
+	github.post "repos/#{REPO}/issues/#{issue}",
 		{milestone: milestone},
 		->
 			msg.send "Added ##{issue} to milestone #{milestone}"
@@ -130,11 +135,13 @@ Issues.formatIssueShort = (issue) ->
 Issues.formatMilestones = (milestones) ->
 	str = ""
 	for milestone in milestones
-		str += Issues.formatMilestoneShort, milestone
+		str += Issues.formatMilestoneShort milestone
 	str
 
 Issues.formatMilestoneShort = (ms) ->
-	"##{ms.number}: #{ms.title} -- #{~~(ms.open_issues / (ms.open_issues + ms.closed_issues) * 100)}%\n"
+	percentage = ms.closed_issues / (ms.open_issues + ms.closed_issues) * 100
+
+	"##{ms.number}: #{ms.title} -- #{percentage}%\n"
 
 Issues.formatMilestoneLong = (ms) ->
 	#this should show open issues left
@@ -160,7 +167,7 @@ module.exports = (robot) ->
 
 	robot.respond /assign(\s+issue)?\s+#(\d+)\sto\s(.*)/i, (msg) ->
 		number = msg.match[2]
-		user = getGithubName msg.match[3]
+		user = getGithubName msg.match[3], msg
 
 		Issues.assign(msg, number, user)
 
@@ -194,7 +201,7 @@ module.exports = (robot) ->
 
 	robot.respond /show(\s+me)?(\s?\w+)?('s)?\s*issues/i, (msg) ->
 		if msg.match[2]
-			user = getGithubName msg.match[2]
+			user = getGithubName msg.match[2], msg
 
 		Issues.get(msg, user)
 
@@ -203,15 +210,15 @@ module.exports = (robot) ->
 
 		Issues.get(msg, null, number)
 
-	robot.respond /show(\s+me)?issues\s+with\s+(.*)/i, (msg) ->
+	robot.respond /show(\s+me)?\s+issues\s+with\s+(.*)/i, (msg) ->
 		tagList = msg.match[2].split(/,\s*/)
 
 		Issues.get(msg, null, null, tagList)
 
-	robot.respond /show(\s+me)?milestones/i, (msg) ->
+	robot.respond /show(\s+me)?\s+milestones/i, (msg) ->
 		Issues.getMilestone(msg)
 	
-	robot.respond /show(\s+me)?milestone\s+#(\d+)/, (msg) ->
+	robot.respond /show(\s+me)?\s+milestone\s+#(\d+)/, (msg) ->
 		number = msg.match[2]
 
 		Issues.getMilestone(msg, number)
@@ -242,3 +249,4 @@ getGithubName = (shortName, msg) ->
 			if user.match(/(\w*)\s/)[1].trim().toLowerCase() is shortName.trim().toLowerCase()
 				name = user
 	USERS[name]
+
