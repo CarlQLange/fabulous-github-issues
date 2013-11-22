@@ -120,6 +120,26 @@ Issues.getMilestone = (msg, number) ->
 		github.get "repos/#{REPO}/milestones", (milestones) ->
 			msg.send Issues.formatMilestones(milestones)
 
+Issues.getPulls = (msg) ->
+	github.get "repos/#{REPO}/pulls", (pulls) ->
+		if (pulls?)
+			msg.send Issues.formatPulls(pulls)
+		else
+			msg.send "Couldn't find any open pull requests."
+
+Issues.mergePull = (msg, number) ->
+	github.request "PUT", "/repos/#{REPO}/pulls/#{number}/merge", (res) ->
+		msg.send res.message
+
+Issues.formatPulls = (pulls) ->
+	str = ""
+	for pull in pulls
+		str += Issues.formatPull pull
+	str
+
+Issues.formatPull = (pull) ->
+	"##{pull.number}: #{pull.title} by #{pull.user.login}\n"
+
 Issues.formatIssues = (issues) ->
 	str = ""
 	for issue in issues
@@ -218,10 +238,21 @@ module.exports = (robot) ->
 	robot.respond /show(\s+me)?\s+milestones/i, (msg) ->
 		Issues.getMilestone(msg)
 	
-	robot.respond /show(\s+me)?\s+milestone\s+#(\d+)/, (msg) ->
+	robot.respond /show(\s+me)?\s+milestone\s+#(\d+)/i, (msg) ->
 		number = msg.match[2]
 
 		Issues.getMilestone(msg, number)
+
+	robot.respond /show(\s+me)\s+pulls/i, (msg) ->
+		Issues.getPulls(msg)
+
+	robot.respond /list\s+pulls/i, (msg) ->
+		Issues.getPulls(msg)
+
+	robot.respond /merge\s+#(\d*)/, (msg) ->
+		number = msg.match[1]
+
+		Issues.mergePull(msg, number)
 
 	robot.respond /(add(\s+a)?)?\s+comment\s+(to|on)?\s+#(\d*):\s*(.*)/i, (msg) -> #TODO better regex
 		number = msg.match[4]
