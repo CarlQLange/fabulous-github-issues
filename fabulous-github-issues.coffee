@@ -19,6 +19,7 @@
 #	hubot show (me) issues
 #	hubot show (me) issues with <comma-seperated tag list>
 #	hubot show (me) issue #42
+#	hubot show (me) unapproved issues
 #	hubot show (me) milestones
 #	hubot show (me) milestone 4
 #	hubot add #42 to milestone 3
@@ -124,6 +125,26 @@ Issues.getPulls = (msg) ->
 	github.get "repos/#{REPO}/pulls", (pulls) ->
 		if (pulls?)
 			msg.send Issues.formatPulls(pulls)
+		else
+			msg.send "Couldn't find any open pull requests."
+
+Issues.getApprovedPulls = (msg) ->
+	github.get "repos/#{REPO}/pulls", (pulls) ->
+		if (pulls?)
+			pulls.forEach (el, i) ->
+				github.get "repos/#{REPO}/statuses/#{el.head.sha}", (statuses) ->
+					if (statuses.length isnt 0 and statuses[0].state is "success")
+						msg.send Issues.formatPull el
+		else
+			msg.send "Couldn't find any open pull requests."
+
+Issues.getUnapprovedPulls = (msg) ->
+	github.get "repos/#{REPO}/pulls", (pulls) ->
+		if (pulls?)
+			pulls.forEach (el, i) ->
+				github.get "repos/#{REPO}/statuses/#{el.head.sha}", (statuses) ->
+					if (statuses.length is 0 or statuses[0].state isnt "success")
+						msg.send Issues.formatPull el
 		else
 			msg.send "Couldn't find any open pull requests."
 
@@ -234,6 +255,12 @@ module.exports = (robot) ->
 		tagList = msg.match[2].split(/,\s*/)
 
 		Issues.get(msg, null, null, tagList)
+
+	robot.respond /show(\s+me)?\s+approved\s+pulls/i, (msg) ->
+		Issues.getApprovedPulls(msg)
+
+	robot.respond /show(\s+me)?\s+unapproved\s+pulls/i, (msg) ->
+		Issues.getUnapprovedPulls(msg)
 
 	robot.respond /show(\s+me)?\s+milestones/i, (msg) ->
 		Issues.getMilestone(msg)
